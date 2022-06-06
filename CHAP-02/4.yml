@@ -1,0 +1,43 @@
+- name: Configure team interface
+hosts: servers
+become: yes
+vars:
+network_connections:
+- name: team0
+interface_name: team0
+type: team
+state: up
+- name: team0-enp7s0
+interface_name: enp7s0
+type: ethernet
+master: team0
+state: up
+- name: team0-enp8s0
+interface_name: enp8s0
+type: ethernet
+master: team0
+state: up
+tasks:
+- name: Is team0 defined?
+include_role:
+name: rhel-system-roles.network
+when: ansible_facts['team0'] is not defined
+- name: Check team0 status
+command: /usr/bin/teamdctl team0 state dump
+register: team0_state
+changed_when: false
+- name: Import team0 status as JSON
+set_fact:
+team0_status: "{{ team0_state.stdout }}"
+- name: Adjust team runner
+command: /usr/bin/nmcli con mod team0 team.runner activebackup
+notify: restart team0
+when:
+- team0_status['setup']['runner_name'] != "activebackup"
+handlers:
+- name: disconnect team0
+command: /usr/bin/nmcli dev dis team0
+listen: restart team0
+- name: start team0
+command: /usr/bin/nmcli con up team0
+listen: restart team0
