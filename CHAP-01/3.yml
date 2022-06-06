@@ -1,0 +1,11 @@
+- name: collect service status facts
+  service_facts:
+- name: display whether NetworkManager is running
+  debug:
+    var: ansible_facts['services']['NetworkManager.service']['state']
+- name: display IPv4 address of enp11s0
+  debug:
+    var: ansible_facts['enp11s0']['ipv4']['address']
+- name: display list of IPv6 addresses of enp11s0
+  debug:
+    var: ansible_facts['enp11s0']['ipv6'] | map(attribute='address') | list
